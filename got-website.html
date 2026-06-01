@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game of Thrones — Les Sept Royaumes</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800;900&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #f0d080;
+    --gold-dark: #8b6914;
+    --blood: #8b0000;
+    --blood-light: #c41e3a;
+    --ice: #a8d8f0;
+    --ice-dark: #5ba3cc;
+    --dark: #0a0a0f;
+    --dark2: #12121a;
+    --dark3: #1a1a26;
+    --text: #e8d5a3;
+    --text-muted: #9a8a6a;
+    --stark: #808080;
+    --lannister: #c9a84c;
+    --targaryen: #8b0000;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'IM Fell English', serif;
+    overflow-x: hidden;
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='4' fill='%23c9a84c' opacity='0.8'/%3E%3C/svg%3E") 10 10, auto;
+  }
+
+  /* ─── LOADER ─── */
+  #loader {
+    position: fixed; inset: 0; background: var(--dark);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 9999; transition: opacity 0.8s;
+  }
+  #loader .sigil {
+    width: 120px; height: 120px; margin-bottom: 24px;
+    animation: spin 3s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loader h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 28px; color: var(--gold);
+    letter-spacing: 8px; text-transform: uppercase;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+  #loader p { color: var(--text-muted); font-size: 14px; margin-top: 12px; letter-spacing: 3px; }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 48px;
+    background: linear-gradient(to bottom, rgba(10,10,15,0.95), transparent);
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+    backdrop-filter: blur(4px);
+  }
+  nav .logo {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 18px; color: var(--gold);
+    letter-spacing: 4px; text-decoration: none;
+  }
+  nav ul { display: flex; gap: 32px; list-style: none; }
+  nav ul a {
+    color: var(--text-muted); text-decoration: none; font-size: 13px;
+    letter-spacing: 2px; text-transform: uppercase; font-family: 'Cinzel', serif;
+    transition: color 0.3s; position: relative;
+  }
+  nav ul a::after {
+    content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
+    height: 1px; background: var(--gold); transform: scaleX(0);
+    transition: transform 0.3s;
+  }
+  nav ul a:hover { color: var(--gold); }
+  nav ul a:hover::after { transform: scaleX(1); }
+
+  /* ─── HERO ─── */
+  #hero {
+    position: relative; height: 100vh; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #hero-canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+  }
+  .hero-overlay {
+    position: relative; z-index: 2; text-align: center; pointer-events: none;
+    padding: 0 24px;
+  }
+  .hero-eyebrow {
+    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 8px;
+    color: var(--gold); text-transform: uppercase; margin-bottom: 24px;
+    opacity: 0; animation: fadeUp 1s forwards 0.5s;
+  }
+  .hero-title {
+    font-family: 'Cinzel Decorative', serif; font-size: clamp(40px, 8vw, 100px);
+    font-weight: 900; line-height: 1;
+    background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-light) 40%, var(--gold) 60%, var(--gold-dark) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 40px rgba(201,168,76,0.4));
+    opacity: 0; animation: fadeUp 1s forwards 0.8s;
+  }
+  .hero-subtitle {
+    font-size: clamp(14px, 2vw, 22px); color: var(--text-muted);
+    font-style: italic; margin: 24px 0 48px;
+    opacity: 0; animation: fadeUp 1s forwards 1.1s;
+  }
+  .hero-cta {
+    display: inline-flex; gap: 16px;
+    opacity: 0; animation: fadeUp 1s forwards 1.4s;
+    pointer-events: all;
+  }
+  .btn-primary {
+    padding: 14px 36px; background: var(--gold);
+    color: var(--dark); font-family: 'Cinzel', serif;
+    font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+    border: none; cursor: pointer; text-decoration: none;
+    transition: all 0.3s; clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  .btn-primary:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(201,168,76,0.4); }
+  .btn-secondary {
+    padding: 14px 36px; border: 1px solid var(--gold);
+    color: var(--gold); font-family: 'Cinzel', serif;
+    font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+    cursor: pointer; text-decoration: none; background: transparent;
+    transition: all 0.3s; clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  .btn-secondary:hover { background: rgba(201,168,76,0.1); transform: translateY(-2px); }
+  .hero-scroll {
+    position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+    z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: var(--text-muted); font-size: 11px; letter-spacing: 3px;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(8px)} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ─── QUOTE DIVIDER ─── */
+  .quote-divider {
+    padding: 60px 48px; text-align: center;
+    background: linear-gradient(to right, var(--dark), var(--dark2), var(--dark));
+    border-top: 1px solid rgba(201,168,76,0.1); border-bottom: 1px solid rgba(201,168,76,0.1);
+    position: relative; overflow: hidden;
+  }
+  .quote-divider::before {
+    content: '"'; position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+    font-size: 200px; color: rgba(201,168,76,0.03); font-family: 'Cinzel Decorative', serif;
+    pointer-events: none;
+  }
+  .quote-divider blockquote {
+    font-size: clamp(18px, 3vw, 28px); font-style: italic;
+    color: var(--text); max-width: 800px; margin: 0 auto;
+    line-height: 1.6;
+  }
+  .quote-divider cite {
+    display: block; margin-top: 16px; font-size: 13px;
+    letter-spacing: 4px; color: var(--gold); font-style: normal;
+    font-family: 'Cinzel', serif; text-transform: uppercase;
+  }
+
+  /* ─── SECTION BASE ─── */
+  section { padding: 100px 48px; }
+  .section-label {
+    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 6px;
+    color: var(--gold); text-transform: uppercase; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .section-label::before, .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--gold);
+    max-width: 80px; opacity: 0.4;
+  }
+  h2 {
+    font-family: 'Cinzel Decorative', serif; font-size: clamp(28px, 5vw, 52px);
+    font-weight: 700; color: var(--text);
+    margin-bottom: 16px; text-align: center;
+  }
+  .section-desc { text-align: center; color: var(--text-muted); font-size: 16px; font-style: italic; max-width: 600px; margin: 0 auto 60px; }
+
+  /* ─── GREAT HOUSES ─── */
+  #houses { background: var(--dark2); }
+  .houses-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2px; max-width: 1400px; margin: 0 auto;
+  }
+  .house-card {
+    position: relative; overflow: hidden; cursor: pointer;
+    aspect-ratio: 3/4; min-height: 360px;
+    transition: transform 0.4s;
+  }
+  .house-card:hover { transform: scale(1.02); z-index: 2; }
+  .house-card-bg {
+    position: absolute; inset: 0;
+    transition: transform 0.6s;
+  }
+  .house-card:hover .house-card-bg { transform: scale(1.1); }
+  .house-stark .house-card-bg { background: linear-gradient(160deg, #1a1a2e 0%, #2d2d3f 40%, #4a4a5e 100%); }
+  .house-lannister .house-card-bg { background: linear-gradient(160deg, #1a1400 0%, #2d2400 40%, #5a4a00 100%); }
+  .house-targaryen .house-card-bg { background: linear-gradient(160deg, #1a0000 0%, #2d0000 40%, #5a0000 100%); }
+  .house-baratheon .house-card-bg { background: linear-gradient(160deg, #0a0a1a 0%, #1a1a2a 40%, #2a2a3a 100%); }
+  .house-tyrell .house-card-bg { background: linear-gradient(160deg, #001a00 0%, #002800 40%, #004a00 100%); }
+  .house-martell .house-card-bg { background: linear-gradient(160deg, #1a0800 0%, #2d1400 40%, #5a2a00 100%); }
+  .house-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 30%, transparent 70%);
+  }
+  .house-sigil-container {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  }
+  .house-sigil { font-size: 80px; opacity: 0.15; transition: opacity 0.4s, transform 0.4s; }
+  .house-card:hover .house-sigil { opacity: 0.35; transform: scale(1.1) rotate(5deg); }
+  .house-info {
+    position: absolute; bottom: 0; left: 0; right: 0; padding: 32px 24px;
+  }
+  .house-name {
+    font-family: 'Cinzel Decorative', serif; font-size: 22px; font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .house-words {
+    font-size: 13px; font-style: italic; color: var(--text-muted); margin-bottom: 12px;
+  }
+  .house-region { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; }
+  .house-stark .house-name { color: #a0a8b8; }
+  .house-stark .house-region { color: #6080a0; }
+  .house-lannister .house-name { color: var(--gold-light); }
+  .house-lannister .house-region { color: var(--gold); }
+  .house-targaryen .house-name { color: #e05050; }
+  .house-targaryen .house-region { color: var(--blood-light); }
+  .house-baratheon .house-name { color: #8090c0; }
+  .house-baratheon .house-region { color: #607090; }
+  .house-tyrell .house-name { color: #80c080; }
+  .house-tyrell .house-region { color: #509050; }
+  .house-martell .house-name { color: #e08040; }
+  .house-martell .house-region { color: #c06030; }
+
+  /* ─── HOUSE MODAL ─── */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200;
+    display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(8px);
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--dark2); border: 1px solid rgba(201,168,76,0.3);
+    max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto;
+    padding: 48px; position: relative;
+    animation: modalIn 0.3s ease;
+  }
+  @keyframes modalIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px; background: none; border: none;
+    color: var(--text-muted); font-size: 24px; cursor: pointer; transition: color 0.2s;
+  }
+  .modal-close:hover { color: var(--gold); }
+  .modal h3 { font-family: 'Cinzel Decorative', serif; font-size: 30px; margin-bottom: 8px; }
+  .modal .motto { font-style: italic; color: var(--gold); margin-bottom: 24px; font-size: 16px; }
+  .modal p { line-height: 1.8; color: var(--text-muted); margin-bottom: 16px; }
+  .modal-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0; }
+  .stat-box { background: var(--dark3); padding: 16px; text-align: center; border: 1px solid rgba(201,168,76,0.1); }
+  .stat-value { font-family: 'Cinzel', serif; font-size: 24px; font-weight: 700; color: var(--gold); }
+  .stat-label { font-size: 11px; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
+
+  /* ─── CHARACTERS 3D ─── */
+  #characters { background: var(--dark); }
+  #char-canvas-wrapper {
+    max-width: 1200px; margin: 0 auto 60px; position: relative;
+  }
+  #char-canvas {
+    width: 100%; height: 500px; border: 1px solid rgba(201,168,76,0.1);
+    cursor: grab;
+  }
+  #char-canvas:active { cursor: grabbing; }
+  .char-label {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 3px; color: var(--gold);
+    text-transform: uppercase; pointer-events: none;
+  }
+  .chars-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px; max-width: 1200px; margin: 0 auto;
+  }
+  .char-card {
+    background: var(--dark2); border: 1px solid rgba(201,168,76,0.1);
+    padding: 20px; cursor: pointer; transition: all 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .char-card::before {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2px; background: var(--gold); transform: scaleX(0);
+    transition: transform 0.3s; transform-origin: left;
+  }
+  .char-card:hover { border-color: rgba(201,168,76,0.4); transform: translateY(-4px); }
+  .char-card:hover::before { transform: scaleX(1); }
+  .char-name { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .char-title { font-size: 12px; color: var(--text-muted); font-style: italic; margin-bottom: 8px; }
+  .char-house { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+  .char-alive { color: #4a9a4a; }
+  .char-dead { color: #8b3333; text-decoration: line-through; opacity: 0.7; }
+  .char-status-badge {
+    display: inline-block; padding: 2px 8px; font-size: 10px;
+    letter-spacing: 1px; text-transform: uppercase; font-family: 'Cinzel', serif;
+    margin-top: 8px; border: 1px solid;
+  }
+
+  /* ─── MAP SECTION ─── */
+  #map-section { background: var(--dark2); padding: 100px 0; }
+  #map-section .section-inner { padding: 0 48px; }
+  #map-container {
+    position: relative; max-width: 1200px; margin: 0 auto;
+    background: #0d1520; border: 1px solid rgba(201,168,76,0.2);
+    overflow: hidden; min-height: 600px;
+  }
+  #map-canvas { width: 100%; height: 600px; display: block; cursor: crosshair; }
+  .map-legend {
+    position: absolute; top: 24px; right: 24px;
+    background: rgba(10,10,15,0.9); border: 1px solid rgba(201,168,76,0.2);
+    padding: 16px 20px;
+  }
+  .map-legend h4 { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 3px; color: var(--gold); margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .map-tooltip {
+    position: absolute; background: rgba(10,10,15,0.95); border: 1px solid rgba(201,168,76,0.3);
+    padding: 12px 16px; pointer-events: none; display: none; z-index: 10; min-width: 160px;
+  }
+  .map-tooltip h5 { font-family: 'Cinzel', serif; font-size: 13px; color: var(--gold); margin-bottom: 4px; }
+  .map-tooltip p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  /* ─── TIMELINE ─── */
+  #timeline { background: var(--dark); }
+  .timeline-container { max-width: 900px; margin: 0 auto; position: relative; }
+  .timeline-container::before {
+    content: ''; position: absolute; left: 50%; top: 0; bottom: 0;
+    width: 1px; background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+    transform: translateX(-50%);
+  }
+  .timeline-item {
+    display: flex; gap: 40px; margin-bottom: 60px; position: relative;
+    opacity: 0; transform: translateY(30px); transition: all 0.6s;
+  }
+  .timeline-item.visible { opacity: 1; transform: translateY(0); }
+  .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+  .timeline-item:nth-child(odd) .timeline-content { text-align: right; }
+  .timeline-dot {
+    position: absolute; left: 50%; top: 24px; transform: translateX(-50%);
+    width: 14px; height: 14px; background: var(--gold); border-radius: 50%;
+    border: 2px solid var(--dark); z-index: 2;
+    box-shadow: 0 0 16px rgba(201,168,76,0.6);
+  }
+  .timeline-content { flex: 1; padding: 20px; background: var(--dark2); border: 1px solid rgba(201,168,76,0.1); }
+  .timeline-year { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; }
+  .timeline-title { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .timeline-desc { font-size: 14px; color: var(--text-muted); line-height: 1.7; }
+
+  /* ─── DRAGONS 3D ─── */
+  #dragons { background: var(--dark2); }
+  #dragon-canvas {
+    width: 100%; height: 500px; max-width: 1200px; margin: 0 auto;
+    display: block; border: 1px solid rgba(201,168,76,0.1);
+  }
+  .dragons-info { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; max-width: 1200px; margin: 40px auto 0; }
+  .dragon-card { background: var(--dark3); border: 1px solid rgba(201,168,76,0.1); padding: 24px; text-align: center; transition: all 0.3s; cursor: pointer; }
+  .dragon-card:hover { border-color: var(--gold); transform: translateY(-4px); }
+  .dragon-card h3 { font-family: 'Cinzel Decorative', serif; font-size: 20px; margin-bottom: 8px; }
+  .dragon-card .dragon-color { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 3px; margin-bottom: 12px; text-transform: uppercase; }
+  .dragon-card p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .drogon { color: #e04030; } .drogon .dragon-color { color: #e04030; }
+  .rhaegal { color: #4a8a4a; } .rhaegal .dragon-color { color: #4a8a4a; }
+  .viserion { color: #e0c040; } .viserion .dragon-color { color: #e0c040; }
+
+  /* ─── DEATHS COUNTER ─── */
+  #deaths { background: var(--dark); padding: 80px 48px; }
+  .deaths-inner { max-width: 900px; margin: 0 auto; text-align: center; }
+  .deaths-inner h2 { color: var(--blood-light); }
+  .deaths-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-top: 48px; }
+  .death-stat { background: var(--dark2); border: 1px solid rgba(139,0,0,0.2); padding: 24px 16px; transition: all 0.3s; }
+  .death-stat:hover { border-color: var(--blood-light); transform: translateY(-4px); }
+  .death-num {
+    font-family: 'Cinzel', serif; font-size: 36px; font-weight: 900;
+    color: var(--blood-light); display: block;
+    counter-reset: num var(--n);
+  }
+  .death-type { font-size: 12px; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; font-family: 'Cinzel', serif; margin-top: 8px; }
+
+  /* ─── GALLERY ─── */
+  #gallery { background: var(--dark2); }
+  .gallery-grid { display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: auto; gap: 4px; max-width: 1200px; margin: 0 auto; }
+  .gallery-item {
+    background: var(--dark3); overflow: hidden; cursor: pointer;
+    position: relative; aspect-ratio: 4/3;
+    transition: transform 0.3s;
+  }
+  .gallery-item:hover { transform: scale(1.02); z-index: 2; }
+  .gallery-item:nth-child(1) { grid-column: span 2; grid-row: span 2; aspect-ratio: auto; }
+  .gallery-item:nth-child(4) { grid-column: span 2; }
+  .gallery-bg {
+    position: absolute; inset: 0;
+    transition: transform 0.5s;
+  }
+  .gallery-item:hover .gallery-bg { transform: scale(1.1); }
+  .gallery-caption {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    padding: 16px 12px 12px; font-size: 12px; color: var(--text);
+    font-family: 'Cinzel', serif; letter-spacing: 1px;
+  }
+
+  /* ─── QUIZ ─── */
+  #quiz { background: var(--dark); }
+  .quiz-container { max-width: 700px; margin: 0 auto; }
+  .quiz-progress { height: 2px; background: var(--dark3); margin-bottom: 40px; }
+  .quiz-progress-bar { height: 100%; background: var(--gold); transition: width 0.4s; }
+  .quiz-question { font-size: 22px; line-height: 1.5; margin-bottom: 32px; }
+  .quiz-options { display: grid; gap: 12px; }
+  .quiz-option {
+    padding: 16px 20px; background: var(--dark2); border: 1px solid rgba(201,168,76,0.15);
+    cursor: pointer; font-family: 'Cinzel', serif; font-size: 14px;
+    letter-spacing: 1px; transition: all 0.2s; text-align: left;
+    color: var(--text);
+  }
+  .quiz-option:hover { border-color: var(--gold); background: rgba(201,168,76,0.05); }
+  .quiz-option.correct { border-color: #4a9a4a; background: rgba(74,154,74,0.1); color: #4a9a4a; }
+  .quiz-option.wrong { border-color: var(--blood-light); background: rgba(196,30,58,0.1); color: var(--blood-light); }
+  .quiz-option:disabled { cursor: not-allowed; }
+  .quiz-score { text-align: center; padding: 40px; display: none; }
+  .quiz-score .score-num { font-family: 'Cinzel Decorative', serif; font-size: 64px; color: var(--gold); }
+  .quiz-score h3 { font-family: 'Cinzel', serif; font-size: 24px; margin: 16px 0 8px; }
+  .quiz-score p { color: var(--text-muted); margin-bottom: 24px; }
+  #quiz-next { margin-top: 24px; display: none; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: var(--dark2); border-top: 1px solid rgba(201,168,76,0.1);
+    padding: 60px 48px 40px;
+  }
+  .footer-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; }
+  .footer-brand .logo-big { font-family: 'Cinzel Decorative', serif; font-size: 22px; color: var(--gold); margin-bottom: 12px; display: block; }
+  .footer-brand p { color: var(--text-muted); font-size: 14px; line-height: 1.7; }
+  .footer-col h4 { font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; margin-bottom: 16px; }
+  .footer-col ul { list-style: none; }
+  .footer-col ul li { margin-bottom: 8px; }
+  .footer-col ul a { color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.2s; }
+  .footer-col ul a:hover { color: var(--text); }
+  .footer-bottom { max-width: 1200px; margin: 40px auto 0; padding-top: 24px; border-top: 1px solid rgba(201,168,76,0.1); display: flex; justify-content: space-between; align-items: center; }
+  .footer-bottom p { color: var(--text-muted); font-size: 12px; }
+  .footer-sigils { display: flex; gap: 16px; font-size: 24px; }
+
+  /* ─── PARTICLE EFFECTS ─── */
+  #particles-container {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    overflow: hidden;
+  }
+  .particle {
+    position: absolute; width: 2px; height: 2px;
+    background: var(--gold); border-radius: 50%;
+    opacity: 0; animation: floatParticle linear infinite;
+  }
+  @keyframes floatParticle {
+    0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.3; }
+    100% { transform: translateY(-100px) translateX(var(--drift)); opacity: 0; }
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--dark); }
+  ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    nav { padding: 12px 20px; }
+    nav ul { display: none; }
+    section { padding: 60px 20px; }
+    .footer-inner { grid-template-columns: 1fr; gap: 32px; }
+    .timeline-container::before { left: 20px; }
+    .timeline-item { flex-direction: column !important; padding-left: 48px; }
+    .timeline-item:nth-child(odd) .timeline-content { text-align: left; }
+    .timeline-dot { left: 20px; }
+    .dragons-info { grid-template-columns: 1fr; }
+    .gallery-grid { grid-template-columns: repeat(3, 1fr); }
+    .gallery-item:nth-child(1) { grid-column: span 1; grid-row: span 1; }
+    .gallery-item:nth-child(4) { grid-column: span 1; }
+    .modal-stats { grid-template-columns: repeat(2,1fr); }
+    .deaths-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <svg class="sigil" viewBox="0 0 100 100" fill="none">
+    <circle cx="50" cy="50" r="45" stroke="#c9a84c" stroke-width="1" stroke-dasharray="4 4"/>
+    <circle cx="50" cy="50" r="35" stroke="#c9a84c" stroke-width="0.5"/>
+    <path d="M50 5 L55 30 L80 20 L65 40 L90 45 L65 50 L80 70 L55 60 L50 85 L45 60 L20 70 L35 50 L10 45 L35 40 L20 20 L45 30 Z" stroke="#c9a84c" stroke-width="1.5" fill="none"/>
+    <circle cx="50" cy="50" r="6" fill="#c9a84c"/>
+  </svg>
+  <h1>Game of Thrones</h1>
+  <p>Winter Is Coming...</p>
+</div>
+
+<!-- PARTICLES -->
+<div id="particles-container"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo">⚔ GoT</a>
+  <ul>
+    <li><a href="#houses">Maisons</a></li>
+    <li><a href="#characters">Personnages</a></li>
+    <li><a href="#map-section">Carte</a></li>
+    <li><a href="#dragons">Dragons</a></li>
+    <li><a href="#timeline">Chronologie</a></li>
+    <li><a href="#quiz">Quiz</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-overlay">
+    <p class="hero-eyebrow">⚔ La Guerre pour le Trône de Fer ⚔</p>
+    <h1 class="hero-title">Game<br>of Thrones</h1>
+    <p class="hero-subtitle">Quand vous jouez au jeu des trônes, vous gagnez ou vous mourez.</p>
+    <div class="hero-cta">
+      <a href="#houses" class="btn-primary">Explorer les Maisons</a>
+      <a href="#quiz" class="btn-secondary">Tester vos Connaissances</a>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <span style="letter-spacing:3px;font-size:10px;font-family:'Cinzel',serif">DÉFILER</span>
+    <svg width="20" height="30" viewBox="0 0 20 30"><rect x="7" y="2" width="6" height="18" rx="3" stroke="#c9a84c" stroke-width="1" fill="none"/><circle cx="10" cy="8" r="2" fill="#c9a84c" style="animation:scrollDot 2s ease-in-out infinite"/></svg>
+  </div>
+</section>
+<style>@keyframes scrollDot{0%,100%{cy:8}50%{cy:16}}</style>
+
+<!-- QUOTE -->
+<div class="quote-divider">
+  <blockquote id="rotating-quote">"L'hiver arrive."</blockquote>
+  <cite id="rotating-cite">— Maison Stark</cite>
+</div>
+
+<!-- HOUSES -->
+<section id="houses">
+  <div class="section-label" style="justify-content:center">Les Grandes Maisons</div>
+  <h2>Les Sept Royaumes</h2>
+  <p class="section-desc">Chaque maison porte ses valeurs, son sigil, et ses ambitions. Explorez leurs histoires.</p>
+  <div class="houses-grid">
+    <div class="house-card house-stark" onclick="openHouse('stark')">
+      <div class="house-card-bg"></div>
+      <div class="house-overlay"></div>
+      <div class="house-sigil-container"><span class="house-sigil">🐺</span></div>
+      <div class="house-info">
+        <div class="house-name">Maison Stark</div>
+        <div class="house-words">L'Hiver Vient</div>
+        <div class="house-region">Winterfell • Le Nord</div>
+      </div>
+    </div>
+    <div class="house-card house-lannister" onclick="openHouse('lannister')">
+      <div class="house-card-bg"></div>
+      <div class="house-overlay"></div>
+      <div class="house-sigil-container"><span class="house-sigil">🦁</span></div>
+      <div class="house-info">
+        <div class="house-name">Maison Lannister</div>
+        <div class="house-words">Entends-moi rugir</div>
+        <div class="house-region">Castral Roc • Westerlands</div>
+      </div>
+    </div>
+    <div class="house-card house-targaryen" onclick="openHouse('targaryen')">
+      <div class="house-card-bg"></div>
+      <div class="house-overlay"></div>
+      <div class="house-sigil-container"><span class="house-sigil">🐉</span></div>
+      <div class="house-info">
+        <div class="house-name">Maison Targaryen</div>
+        <div class="house-words">Feu et Sang</div>
+        <div class="house-region">Port-Réal • Dragonstone</div>
+      </div>
+    </div>
+    <div class="house-card house-baratheon" onclick="openHouse('baratheon')">
+      <div class="house-card-bg"></div>
+      <div class="house-overlay"></div>
+      <div class="house-sigil-container"><span class="house-sigil">🦌</span></div>
+      <div class="house-info">
+        <div class="house-name">Maison Baratheon</div>
+        <div class="house-words">Nous Sommes Semence</div>
+        <div class="house-region">Storm's End • Terres de l'Orage</div>
+      </div>
+    </div>
+    <div class="house-card house-tyrell" onclick="openHouse('tyrell')">
+      <div class="house-card-bg"></div>
+      <div class="house-overlay"></div>
+      <div class="house-sigil-container"><span class="house-sigil">🌹</span></div>
+      <div class="house-info">
+        <div class="house-name">Maison Tyrell</div>
+        <div class="house-words">La Croissance est Force</div>
+        <div class="house-region">Hautjardin • Reach</div>
+      </div>
+    </div>
+    <div class="house-card house-martell" onclick="openHouse('martell')">
+      <div class="house-card-bg"></div>
+      <div class="house-overlay"></div>
+      <div class="house-sigil-container"><span class="house-sigil">☀️</span></div>
+      <div class="house-info">
+        <div class="house-name">Maison Martell</div>
+        <div class="house-words">Insoumis, Indomptable, Intouchable</div>
+        <div class="house-region">Lancehélion • Dorne</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOUSE MODAL -->
+<div class="modal-backdrop" id="house-modal" onclick="if(event.target===this)closeHouse()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeHouse()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- CHARACTERS 3D -->
+<section id="characters">
+  <div class="section-label" style="justify-content:center">Personnages Légendaires</div>
+  <h2>Les Joueurs du Trône</h2>
+  <p class="section-desc">Ces hommes et femmes ont façonné le destin des Sept Royaumes.</p>
+  <div id="char-canvas-wrapper">
+    <canvas id="char-canvas"></canvas>
+    <div class="char-label" id="char-hover-label">— Survol pour explorer —</div>
+  </div>
+  <div class="chars-grid" id="chars-grid"></div>
+</section>
+
+<!-- MAP -->
+<section id="map-section">
+  <div class="section-inner">
+    <div class="section-label" style="justify-content:center">Westeros & Essos</div>
+    <h2>La Carte des Sept Royaumes</h2>
+    <p class="section-desc" style="margin-bottom:40px">Explorez les territoires, les châteaux et les lieux légendaires.</p>
+  </div>
+  <div id="map-container">
+    <canvas id="map-canvas"></canvas>
+    <div class="map-legend">
+      <h4>Légende</h4>
+      <div class="legend-item"><div class="legend-dot" style="background:#c9a84c"></div>Capitale</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6080a0"></div>Château Stark</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e04030"></div>Territoire Targaryen</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4a9a4a"></div>Free Cities</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffffff55"></div>Le Mur</div>
+    </div>
+    <div class="map-tooltip" id="map-tooltip">
+      <h5 id="tt-name"></h5>
+      <p id="tt-desc"></p>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section id="timeline">
+  <div class="section-label" style="justify-content:center">Chronologie</div>
+  <h2>Les Grandes Batailles & Événements</h2>
+  <p class="section-desc">De la Conquête d'Aegon à la Guerre des Cinq Rois.</p>
+  <div class="timeline-container" id="timeline-container"></div>
+</section>
+
+<!-- DRAGONS 3D -->
+<section id="dragons">
+  <div class="section-label" style="justify-content:center">Les Dragons de Daenerys</div>
+  <h2>Le Dernier Feu</h2>
+  <p class="section-desc">Trois dragons, trois destinées. La terreur du ciel incarnée.</p>
+  <canvas id="dragon-canvas"></canvas>
+  <div class="dragons-info">
+    <div class="dragon-card drogon" onclick="focusDragon(0)">
+      <h3>Drogon</h3>
+      <div class="dragon-color">Noir & Rouge</div>
+      <p>Le plus grand et féroce des dragons de Daenerys, nommé en l'honneur de Khal Drogo. Il porta la Mère des Dragons sur son dos vers la victoire.</p>
+    </div>
+    <div class="dragon-card rhaegal" onclick="focusDragon(1)">
+      <h3>Rhaegal</h3>
+      <div class="dragon-color">Vert & Bronze</div>
+      <p>Nommé d'après Rhaegar Targaryen, père de Jon Snow. Il fut tué par les scorpions de Cersei lors de la bataille au large de Peyredragon.</p>
+    </div>
+    <div class="dragon-card viserion" onclick="focusDragon(2)">
+      <h3>Viserion</h3>
+      <div class="dragon-color">Crème & Or</div>
+      <p>Tué au-delà du Mur par le Roi de la Nuit, puis ressuscité en dragon-mort soufflant du feu de glace bleue, détruisant le Mur.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DEATHS -->
+<section id="deaths">
+  <div class="deaths-inner">
+    <div class="section-label" style="justify-content:center">Le Dieu des Morts</div>
+    <h2>Les Sacrifices du Trône</h2>
+    <p class="section-desc" style="color:rgba(196,30,58,0.7)">Aucun trône ne mérite autant de sang versé.</p>
+    <div class="deaths-grid">
+      <div class="death-stat"><span class="death-num" data-target="73">0</span><div class="death-type">Personnages Principaux</div></div>
+      <div class="death-stat"><span class="death-num" data-target="150000">0</span><div class="death-type">Décès Estimés</div></div>
+      <div class="death-stat"><span class="death-num" data-target="8">0</span><div class="death-type">Saisons</div></div>
+      <div class="death-stat"><span class="death-num" data-target="3">0</span><div class="death-type">Dragons</div></div>
+      <div class="death-stat"><span class="death-num" data-target="5">0</span><div class="death-type">Rois en Guerre</div></div>
+      <div class="death-stat"><span class="death-num" data-target="96">0</span><div class="death-type">Épisodes</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section id="gallery">
+  <div class="section-label" style="justify-content:center">Lieux Mythiques</div>
+  <h2>Les Décors du Pouvoir</h2>
+  <p class="section-desc">Des paysages qui ont marqué l'imaginaire collectif.</p>
+  <div class="gallery-grid">
+    <div class="gallery-item">
+      <div class="gallery-bg" style="background:linear-gradient(135deg,#1a1a3a 0%,#2a2a6a 50%,#1a3a6a 100%)">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0">
+          <rect width="100%" height="100%" fill="url(#g1)"/>
+          <defs><linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a0a1a"/><stop offset="100%" stop-color="#1a2a5a"/></linearGradient></defs>
+          <rect x="0" y="60%" width="100%" height="40%" fill="#0a0a14" opacity="0.9"/>
+          <rect x="20%" y="40%" width="8%" height="60%" fill="#1a1a2a"/>
+          <rect x="30%" y="30%" width="12%" height="70%" fill="#1a1a2a"/>
+          <rect x="45%" y="45%" width="6%" height="55%" fill="#1a1a2a"/>
+          <rect x="55%" y="35%" width="15%" height="65%" fill="#1a1a2a"/>
+          <circle cx="50%" cy="25%" r="3" fill="#fff" opacity="0.9"/>
+          <circle cx="30%" cy="15%" r="2" fill="#fff" opacity="0.7"/>
+          <circle cx="70%" cy="20%" r="2.5" fill="#fff" opacity="0.8"/>
+          <circle cx="15%" cy="30%" r="1.5" fill="#fff" opacity="0.6"/>
+          <circle cx="85%" cy="10%" r="2" fill="#fff" opacity="0.7"/>
+          <text x="50%" y="72%" text-anchor="middle" font-family="Cinzel Decorative,serif" font-size="28" fill="#c9a84c" opacity="0.9">Port-Réal</text>
+          <text x="50%" y="82%" text-anchor="middle" font-family="Cinzel,serif" font-size="12" fill="#9a8a6a" opacity="0.8">Capitale des Sept Royaumes</text>
+        </svg>
+      </div>
+      <div class="gallery-caption">Port-Réal</div>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-bg" style="background:linear-gradient(135deg,#001020 0%,#002040 100%)">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0">
+          <rect width="100%" height="100%" fill="#001422"/>
+          <rect x="0" y="40%" width="100%" height="60%" fill="#00090f" opacity="0.9"/>
+          <rect x="15%" y="0%" width="70%" height="40%" fill="#001a30" opacity="0.8"/>
+          <line x1="0" y1="40%" x2="100%" y2="40%" stroke="#a8d8f0" stroke-width="2" opacity="0.6"/>
+          <line x1="5%" y1="40%" x2="5%" y2="0%" stroke="#a8d8f0" stroke-width="3" opacity="0.5"/>
+          <line x1="20%" y1="40%" x2="20%" y2="0%" stroke="#a8d8f0" stroke-width="3" opacity="0.5"/>
+          <text x="50%" y="70%" text-anchor="middle" font-family="Cinzel Decorative,serif" font-size="20" fill="#a8d8f0" opacity="0.9">Le Mur</text>
+          <text x="50%" y="82%" text-anchor="middle" font-family="Cinzel,serif" font-size="11" fill="#9a8a6a" opacity="0.7">300 lieues de glace</text>
+        </svg>
+      </div>
+      <div class="gallery-caption">Le Mur</div>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-bg">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0">
+          <rect width="100%" height="100%" fill="#0a0a15"/>
+          <ellipse cx="50%" cy="120%" rx="60%" ry="80%" fill="#1a0a00" opacity="0.8"/>
+          <rect x="30%" y="20%" width="40%" height="60%" fill="#201000" opacity="0.8"/>
+          <rect x="35%" y="10%" width="8%" height="15%" fill="#201000"/>
+          <rect x="57%" y="10%" width="8%" height="15%" fill="#201000"/>
+          <text x="50%" y="65%" text-anchor="middle" font-family="Cinzel Decorative,serif" font-size="16" fill="#c9a84c" opacity="0.9">Winterfell</text>
+          <text x="50%" y="80%" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="#9a8a6a" opacity="0.7">Forteresse des Stark</text>
+        </svg>
+      </div>
+      <div class="gallery-caption">Winterfell</div>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-bg">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0">
+          <rect width="100%" height="100%" fill="#100000"/>
+          <ellipse cx="50%" cy="110%" rx="50%" ry="60%" fill="#200000"/>
+          <polygon points="50%,5% 40%,40% 35%,100% 65%,100% 60%,40%" fill="#200500"/>
+          <text x="50%" y="50%" text-anchor="middle" font-family="Cinzel Decorative,serif" font-size="16" fill="#e04030" opacity="0.9">Peyredragon</text>
+          <text x="50%" y="65%" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="#9a8a6a" opacity="0.7">Ancestral fief Targaryen</text>
+        </svg>
+      </div>
+      <div class="gallery-caption">Peyredragon</div>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-bg">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0">
+          <rect width="100%" height="100%" fill="#001400"/>
+          <rect x="0" y="60%" width="100%" height="40%" fill="#001a00" opacity="0.9"/>
+          <ellipse cx="20%" cy="55%" rx="15%" ry="8%" fill="#003000"/>
+          <ellipse cx="60%" cy="50%" rx="20%" ry="10%" fill="#003500"/>
+          <ellipse cx="80%" cy="58%" rx="12%" ry="7%" fill="#002800"/>
+          <text x="50%" y="35%" text-anchor="middle" font-family="Cinzel Decorative,serif" font-size="16" fill="#80c080" opacity="0.9">Hautjardin</text>
+          <text x="50%" y="50%" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="#9a8a6a" opacity="0.7">Le Grenier des Sept Royaumes</text>
+        </svg>
+      </div>
+      <div class="gallery-caption">Hautjardin</div>
+    </div>
+    <div class="gallery-item">
+      <div class="gallery-bg">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0">
+          <rect width="100%" height="100%" fill="#0a0800"/>
+          <circle cx="50%" cy="30%" r="25%" fill="#1a0f00" opacity="0.8"/>
+          <circle cx="50%" cy="30%" r="18%" fill="#201500" opacity="0.8"/>
+          <text x="50%" y="35%" text-anchor="middle" font-family="Cinzel Decorative,serif" font-size="16" fill="#e08040" opacity="0.9">Sunspear</text>
+          <text x="50%" y="50%" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="#9a8a6a" opacity="0.7">Capitale de Dorne</text>
+        </svg>
+      </div>
+      <div class="gallery-caption">Sunspear</div>
+    </div>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section id="quiz">
+  <div class="section-label" style="justify-content:center">Défi du Trône</div>
+  <h2>Êtes-vous Digne du Trône ?</h2>
+  <p class="section-desc">Testez vos connaissances sur Game of Thrones.</p>
+  <div class="quiz-container">
+    <div class="quiz-progress"><div class="quiz-progress-bar" id="quiz-progress-bar" style="width:0%"></div></div>
+    <div id="quiz-body">
+      <div class="quiz-question" id="quiz-question"></div>
+      <div class="quiz-options" id="quiz-options"></div>
+      <button class="btn-primary" id="quiz-next" style="display:none" onclick="nextQuestion()">Question Suivante ⚔</button>
+    </div>
+    <div class="quiz-score" id="quiz-score">
+      <div class="score-num" id="score-display">0/10</div>
+      <h3 id="score-title"></h3>
+      <p id="score-desc"></p>
+      <button class="btn-primary" onclick="restartQuiz()">Rejouer</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="logo-big">⚔ Game of Thrones</span>
+      <p>Un site fan dédié à la série épique créée par George R.R. Martin. Aucune affiliation avec HBO ou les créateurs officiels.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Maisons</h4>
+      <ul>
+        <li><a href="#houses">Stark</a></li>
+        <li><a href="#houses">Lannister</a></li>
+        <li><a href="#houses">Targaryen</a></li>
+        <li><a href="#houses">Baratheon</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Explorer</h4>
+      <ul>
+        <li><a href="#characters">Personnages</a></li>
+        <li><a href="#map-section">Carte</a></li>
+        <li><a href="#dragons">Dragons</a></li>
+        <li><a href="#timeline">Chronologie</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Le Saviez-vous ?</h4>
+      <ul>
+        <li><a href="#deaths">Statistiques</a></li>
+        <li><a href="#quiz">Quiz</a></li>
+        <li><a href="#gallery">Galerie</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2024 Game of Thrones Fan Site — Fait avec ⚔ et 🐉</p>
+    <div class="footer-sigils">🐺 🦁 🐉 🦌 🌹 ☀️</div>
+  </div>
+</footer>
+
+<script>
+// ────── DATA ──────
+const housesData = {
+  stark: {
+    name: "Maison Stark", emoji: "🐺", color: "#a0a8b8",
+    motto: "L'Hiver Vient",
+    region: "Winterfell, Le Nord",
+    desc1: "La Maison Stark est l'une des plus anciennes et nobles maisons de Westeros. Les Stark gouvernent le Nord depuis des millénaires depuis leur château de Winterfell. Ils sont connus pour leur stoïcisme, leur sens du devoir et leur connexion profonde avec les dieux anciens.",
+    desc2: "Leurs loups-garous géants incarnent la nature sauvage du Nord. Les Stark ont produit certains des personnages les plus héroïques de la série, notamment Ned Stark, Arya, Sansa et Jon Snow.",
+    members: "Ned, Catelyn, Robb, Sansa, Arya, Bran, Rickon, Jon, Benjen",
+    strength: "L'honneur et la loyauté", weakness: "Trop droits dans leurs bottes",
+    sigil: "Loup-garou sur fond gris", seat: "Winterfell",
+    stats: [{val:"8000", lab:"Hommes d'armes"},{val:"7", lab:"Membres principaux"},{val:"3000+", lab:"Ans de règne"}]
+  },
+  lannister: {
+    name: "Maison Lannister", emoji: "🦁", color: "#c9a84c",
+    motto: "Entends-moi Rugir",
+    region: "Castral Roc, Westerlands",
+    desc1: "La famille la plus riche de Westeros. Un Lannister paie toujours ses dettes. Sous leur façade dorée se cachent intrigues, trahisons et une ambition sans limites. Tywin Lannister a élevé sa maison au sommet du pouvoir.",
+    desc2: "Cersei, Jaime et Tyrion forment une trinité complexe. La main du roi sous Robert Baratheon, puis une reine régente impitoyable, un kingsguard déshonoré et un père meurtri — les Lannister incarnent la complexité morale de la série.",
+    members: "Tywin, Cersei, Jaime, Tyrion, Joffrey, Myrcella, Tommen",
+    strength: "Richesse immense et politique", weakness: "Orgueil et hubris",
+    sigil: "Lion d'or sur fond cramoisi", seat: "Castral Roc",
+    stats: [{val:"∞", lab:"Or de Castral Roc"},{val:"10000", lab:"Hommes d'armes"},{val:"1", lab:"Trône de Fer"}]
+  },
+  targaryen: {
+    name: "Maison Targaryen", emoji: "🐉", color: "#e05050",
+    motto: "Feu et Sang",
+    region: "Peyredragon, Port-Réal",
+    desc1: "Descendants des anciens seigneurs de Valyria, les Targaryen ont conquis Westeros avec leurs dragons. Aegon le Conquérant forga le Trône de Fer avec le feu de Balerion le Noir. Ils régnèrent pendant 300 ans avant la Rébellion Baratheon.",
+    desc2: "Daenerys Targaryen, Mère des Dragons, chercha à reprendre son héritage. Jon Snow — en réalité Aegon Targaryen — incarne les deux maisons. Le destin des Targaryen est lié au feu, au sang, et à la folie potentielle qui peut consumer leurs âmes.",
+    members: "Daenerys, Jon/Aegon, Viserys, Aemon, Rhaegar",
+    strength: "Dragons et feu dragonique", weakness: "La folie Targaryen",
+    sigil: "Dragon bicéphale rouge sur fond noir", seat: "Peyredragon",
+    stats: [{val:"3", lab:"Dragons"},{val:"300", lab:"Ans de règne"},{val:"1", lab:"Vraie héritière"}]
+  },
+  baratheon: {
+    name: "Maison Baratheon", emoji: "🦌", color: "#8090c0",
+    motto: "Nous Sommes Semence",
+    region: "Storm's End, Terres de l'Orage",
+    desc1: "Robert Baratheon renversa les Targaryen et prit le Trône de Fer. Un roi guerrier devenu un monarque dissolu, les Baratheon virent leur maison s'effriter sous le poids de la succession et de la guerre civile.",
+    desc2: "Stannis, l'homme de devoir. Renly, le roi des cœurs. Joffrey, le tyran. La maison Baratheon illustre comment le pouvoir corrompt et comment les frères peuvent se déchirer pour un trône.",
+    members: "Robert, Cersei, Joffrey, Myrcella, Tommen, Stannis, Renly",
+    strength: "Légitimité dynastique", weakness: "Divisions internes",
+    sigil: "Cerf couronné noir sur fond d'or", seat: "Storm's End / Port-Réal",
+    stats: [{val:"20", lab:"Ans de règne Robert"},{val:"5", lab:"Rois en guerre"},{val:"1", lab:"Roilégitimiste"}]
+  },
+  tyrell: {
+    name: "Maison Tyrell", emoji: "🌹", color: "#80c080",
+    motto: "La Croissance est Force",
+    region: "Hautjardin, Le Reach",
+    desc1: "La maison la plus riche après les Lannister. Les Tyrell contrôlent le grenier de Westeros. Margaery Tyrell joua magistralement de son charme pour s'imposer reine, tandis que la grand-mère Olenna Tyrell manœuvra dans l'ombre.",
+    desc2: "La Rose d'Or de Hautjardin cache des épines acérées. Olenna la vieille rose fut révélée comme l'une des manipulatrices les plus redoutables des Sept Royaumes. La maison fut détruite en une nuit par le feu de Cersei.",
+    members: "Olenna, Mace, Loras, Margaery",
+    strength: "Richesse agricole et charme", weakness: "Naïveté politique",
+    sigil: "Rose dorée sur fond vert", seat: "Hautjardin",
+    stats: [{val:"1er", lab:"Producteur de blé"},{val:"80000", lab:"Hommes de guerre"},{val:"1", lab:"Reine couronnée"}]
+  },
+  martell: {
+    name: "Maison Martell", emoji: "☀️", color: "#e08040",
+    motto: "Insoumis, Indomptable, Intouchable",
+    region: "Sunspear, Dorne",
+    desc1: "Seule région à n'avoir jamais été conquise par Aegon le Conquérant, Dorne est fier de son indépendance. Les Martell ont une culture unique, d'origine rhoynaire, et une tolérance sociale bien plus grande que le reste de Westeros.",
+    desc2: "L'Oberyn Martell, la Vipère Rouge, chercha vengeance pour le meurtre de sa sœur Elia. Sa mort en duel contre la Montagne fut l'un des moments les plus tragiques de la série. Les Sand Snakes portèrent son héritage de rébellion.",
+    members: "Doran, Oberyn, Elia, Ellaria, Sand Snakes",
+    strength: "Indépendance et culture guerrière", weakness: "Isolement politique",
+    sigil: "Soleil piqué d'une lance d'or", seat: "Sunspear",
+    stats: [{val:"0", lab:"Fois conquis"},{val:"1", lab:"Oberyn en duel"},{val:"∞", lab:"Vengeance promise"}]
+  }
+};
+
+const characters = [
+  {name:"Jon Snow", title:"Lord Commandant de la Garde de Nuit", house:"Stark / Targaryen", alive:true, emoji:"⚔️"},
+  {name:"Daenerys Targaryen", title:"Mère des Dragons", house:"Targaryen", alive:false, emoji:"🐉"},
+  {name:"Tyrion Lannister", title:"Main du Roi", house:"Lannister", alive:true, emoji:"🦁"},
+  {name:"Cersei Lannister", title:"Reine des Sept Royaumes", house:"Lannister", alive:false, emoji:"👑"},
+  {name:"Arya Stark", title:"Pas de Nom", house:"Stark", alive:true, emoji:"🗡️"},
+  {name:"Jaime Lannister", title:"Régicide", house:"Lannister", alive:false, emoji:"⚔️"},
+  {name:"Sansa Stark", title:"Reine du Nord", house:"Stark", alive:true, emoji:"🌹"},
+  {name:"Bran Stark", title:"Le Roi des Six Royaumes", house:"Stark", alive:true, emoji:"🐦"},
+  {name:"Ned Stark", title:"Lord de Winterfell", house:"Stark", alive:false, emoji:"🐺"},
+  {name:"Tywin Lannister", title:"Main du Roi", house:"Lannister", alive:false, emoji:"🦁"},
+  {name:"Margaery Tyrell", title:"Reine", house:"Tyrell", alive:false, emoji:"🌹"},
+  {name:"Oberyn Martell", title:"La Vipère Rouge", house:"Martell", alive:false, emoji:"☀️"},
+];
+
+const timelineEvents = [
+  {year:"283 AC", title:"La Rébellion de Robert", desc:"Robert Baratheon renverse Aerys II 'Le Roi Fou' et prend le Trône de Fer. Les dragons Targaryen sont vaincus pour toujours."},
+  {year:"298 AC", title:"Mort de Jon Arryn", desc:"La mort du Main du Roi déclenche les enquêtes de Ned Stark et révèle les secrets des Lannister. Le début de tout."},
+  {year:"299 AC", title:"Décapitation de Ned Stark", desc:"L'exécution choc de Ned Stark confirme que personne n'est en sécurité dans ce monde. Game of Thrones change la télévision."},
+  {year:"299 AC", title:"Naissance des Dragons", desc:"Sur le bûcher funéraire de Khal Drogo, Daenerys Targaryen fait naître trois dragons pour la première fois depuis un siècle."},
+  {year:"299 AC", title:"Guerre des Cinq Rois", desc:"Robb Stark, Stannis Baratheon, Renly Baratheon, Balon Greyjoy et Joffrey se disputent le trône dans un conflit dévastateur."},
+  {year:"300 AC", title:"Les Noces Pourpres", desc:"Le meurtre de Joffrey lors de son mariage. Tyrion est accusé, emprisonné, et le destin des Lannister bascule."},
+  {year:"303 AC", title:"La Bataille des Bâtards", desc:"Jon Snow reprend Winterfell à Ramsay Bolton lors d'une bataille épique. Sansa se venge. Le Nord se souvient."},
+  {year:"305 AC", title:"La Grande Guerre", desc:"Les Marcheurs Blancs franchissent le Mur détruit par Viserion. La bataille de Winterfell — la plus longue bataille de l'histoire TV."},
+];
+
+const quizQuestions = [
+  {q:"Quel est le vrai nom de Jon Snow ?", opts:["Aegon Targaryen","Jorah Snow","Stark Snow","Jon Baratheon"], correct:0},
+  {q:"Qui assassina le Roi Fou Aerys II ?", opts:["Ned Stark","Robert Baratheon","Jaime Lannister","Ser Barristan"], correct:2},
+  {q:"Quel est le nom de l'épée Valyrian de Jon Snow ?", opts:["Vent du Nord","Longclaw","Perçeneige","Darksisters"], correct:1},
+  {q:"Qui prononça 'Valar Morghulis' pour la première fois à Arya ?", opts:["Jaqen H'ghar","Syrio Forel","Le Grand Mestre","Melisandre"], correct:0},
+  {q:"Quel dragon fut tué par le Roi de la Nuit au-delà du Mur ?", opts:["Drogon","Rhaegal","Viserion","Balerion"], correct:2},
+  {q:"Qui finit sur le Trône de Fer à la fin de la série ?", opts:["Jon Snow","Daenerys","Sansa Stark","Bran Stark"], correct:3},
+  {q:"Quel est le vrai prénom de la Vipère Rouge ?", opts:["Doran","Oberyn","Trystane","Ellaria"], correct:1},
+  {q:"Combien d'enfants avait Ned Stark avec Catelyn ?", opts:["3","4","5","6"], correct:2},
+  {q:"Qui tua Cersei Lannister ?", opts:["Arya Stark","Jaime Lannister","Le Bûcheron de la tour en effondrement","Daenerys"], correct:2},
+  {q:"Quel est le cri de guerre des Dothraki ?", opts:["Valar Dohaeris","Dracarys","Mhysa","Khaleen"], correct:2},
+];
+
+const mapLocations = [
+  {x:0.42, y:0.55, name:"Port-Réal", desc:"Capitale des Sept Royaumes. Siège du Trône de Fer.", color:"#c9a84c", size:12},
+  {x:0.35, y:0.22, name:"Winterfell", desc:"Forteresse ancestrale des Stark. Siège du Nord.", color:"#6080a0", size:10},
+  {x:0.25, y:0.08, name:"Le Mur", desc:"Barrière de glace de 300 pieds de haut. Dernière défense contre les Marcheurs Blancs.", color:"#a8d8f0", size:14, isLine:true},
+  {x:0.48, y:0.72, name:"Peyredragon", desc:"Île-forteresse ancestrale des Targaryen.", color:"#e04030", size:9},
+  {x:0.28, y:0.58, name:"Castral Roc", desc:"Château Lannister. Assis sur une mine d'or.", color:"#c9a84c", size:9},
+  {x:0.38, y:0.78, name:"Hautjardin", desc:"Siège des Tyrell. Grenier de Westeros.", color:"#4a9a4a", size:9},
+  {x:0.32, y:0.88, name:"Dorne", desc:"Région méridionale indépendante. Siège des Martell.", color:"#e08040", size:9},
+  {x:0.75, y:0.45, name:"Pentos", desc:"Cité libre d'Essos. Premier refuge de Daenerys.", color:"#4a9a4a", size:8},
+  {x:0.85, y:0.5, name:"Braavos", desc:"La plus puissante des Cités Libres. Foyer de la Banque de Fer.", color:"#4a9a4a", size:9},
+  {x:0.8, y:0.65, name:"Meereen", desc:"Cité esclavagiste conquise par Daenerys.", color:"#e04030", size:9},
+];
+
+const quotes = [
+  {text:"L'hiver arrive.", cite:"Maison Stark"},
+  {text:"Entends-moi rugir.", cite:"Maison Lannister"},
+  {text:"Feu et Sang.", cite:"Maison Targaryen"},
+  {text:"Un Lannister paie toujours ses dettes.", cite:"Tyrion Lannister"},
+  {text:"Valar Morghulis — Tous les hommes doivent mourir.", cite:"Arya Stark"},
+  {text:"Le pouvoir réside là où les hommes croient qu'il réside.", cite:"Varys"},
+  {text:"Je préfère être haï pour ce que je suis qu'aimé pour ce que je ne suis pas.", cite:"Tyrion Lannister"},
+  {text:"Quand vous jouez au jeu des trônes, vous gagnez ou vous mourez.", cite:"Cersei Lannister"},
+];
+
+// ────── LOADER ──────
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loader').style.opacity = '0';
+    setTimeout(() => document.getElementById('loader').style.display = 'none', 800);
+  }, 1800);
+});
+
+// ────── PARTICLES ──────
+function createParticles() {
+  const container = document.getElementById('particles-container');
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.setProperty('--drift', (Math.random() * 100 - 50) + 'px');
+    p.style.animationDuration = (8 + Math.random() * 15) + 's';
+    p.style.animationDelay = (Math.random() * 15) + 's';
+    p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
+    container.appendChild(p);
+  }
+}
+createParticles();
+
+// ────── ROTATING QUOTE ──────
+let quoteIdx = 0;
+function rotateQuote() {
+  const q = document.getElementById('rotating-quote');
+  const c = document.getElementById('rotating-cite');
+  q.style.opacity = '0'; c.style.opacity = '0';
+  setTimeout(() => {
+    quoteIdx = (quoteIdx + 1) % quotes.length;
+    q.textContent = '"' + quotes[quoteIdx].text + '"';
+    c.textContent = '— ' + quotes[quoteIdx].cite;
+    q.style.transition = c.style.transition = 'opacity 1s';
+    q.style.opacity = '1'; c.style.opacity = '1';
+  }, 600);
+}
+setInterval(rotateQuote, 5000);
+
+// ────── HERO CANVAS (THREE.JS) ──────
+(function initHero() {
+  const canvas = document.getElementById('hero-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 0, 30);
+
+  // Ambient light
+  scene.add(new THREE.AmbientLight(0x110a00, 1));
+  const pointLight = new THREE.PointLight(0xc9a84c, 2, 60);
+  pointLight.position.set(0, 10, 10);
+  scene.add(pointLight);
+  const blueLight = new THREE.PointLight(0x4080c0, 1, 80);
+  blueLight.position.set(-20, -10, 5);
+  scene.add(blueLight);
+
+  // Stars
+  const starGeo = new THREE.BufferGeometry();
+  const starCount = 2000;
+  const starPos = new Float32Array(starCount * 3);
+  for (let i = 0; i < starCount * 3; i++) starPos[i] = (Math.random() - 0.5) * 200;
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.15, transparent: true, opacity: 0.8 });
+  scene.add(new THREE.Points(starGeo, starMat));
+
+  // Iron Throne (simplified 3D)
+  const throneGroup = new THREE.Group();
+  // Base
+  const baseGeo = new THREE.CylinderGeometry(3, 4, 1, 8);
+  const metalMat = new THREE.MeshPhongMaterial({ color: 0x3a3a3a, shininess: 80, specular: 0x888888 });
+  const base = new THREE.Mesh(baseGeo, metalMat);
+  throneGroup.add(base);
+  // Seat
+  const seatGeo = new THREE.BoxGeometry(5, 0.6, 4);
+  const seat = new THREE.Mesh(seatGeo, metalMat);
+  seat.position.set(0, 0.8, 0);
+  throneGroup.add(seat);
+  // Back
+  const backGeo = new THREE.BoxGeometry(5, 6, 0.6);
+  const back = new THREE.Mesh(backGeo, metalMat);
+  back.position.set(0, 4, -1.7);
+  throneGroup.add(back);
+  // Arms
+  const armMat = new THREE.MeshPhongMaterial({ color: 0x4a4a4a, shininess: 60 });
+  [-2.3, 2.3].forEach(x => {
+    const armGeo = new THREE.BoxGeometry(0.6, 2, 4);
+    const arm = new THREE.Mesh(armGeo, armMat);
+    arm.position.set(x, 1.8, 0);
+    throneGroup.add(arm);
+  });
+  // Swords (decorative spikes)
+  const swordMat = new THREE.MeshPhongMaterial({ color: 0x888890, shininess: 120, specular: 0xaaaaaa });
+  for (let i = 0; i < 12; i++) {
+    const h = 1 + Math.random() * 3;
+    const swordGeo = new THREE.ConeGeometry(0.06, h, 4);
+    const sword = new THREE.Mesh(swordGeo, swordMat);
+    const angle = (i/12) * Math.PI * 2;
+    sword.position.set(Math.cos(angle) * 2.5, 5 + Math.random() * 2, Math.sin(angle) * 1.5 - 1.5);
+    sword.rotation.z = (Math.random() - 0.5) * 0.5;
+    sword.rotation.x = (Math.random() - 0.5) * 0.3;
+    throneGroup.add(sword);
+  }
+
+  throneGroup.position.set(0, -5, 0);
+  throneGroup.rotation.y = 0.3;
+  scene.add(throneGroup);
+
+  // Floating particles
+  const floatGeo = new THREE.BufferGeometry();
+  const floatCount = 300;
+  const floatPos = new Float32Array(floatCount * 3);
+  const floatVel = [];
+  for (let i = 0; i < floatCount; i++) {
+    floatPos[i*3] = (Math.random()-0.5)*40;
+    floatPos[i*3+1] = (Math.random()-0.5)*30;
+    floatPos[i*3+2] = (Math.random()-0.5)*20;
+    floatVel.push({x:(Math.random()-0.5)*0.01, y:Math.random()*0.02+0.005, z:(Math.random()-0.5)*0.005});
+  }
+  floatGeo.setAttribute('position', new THREE.BufferAttribute(floatPos, 3));
+  const floatMat = new THREE.PointsMaterial({color:0xc9a84c, size:0.1, transparent:true, opacity:0.6});
+  const floatPoints = new THREE.Points(floatGeo, floatMat);
+  scene.add(floatPoints);
+
+  let mouse = {x:0, y:0};
+  window.addEventListener('mousemove', e => { mouse.x = (e.clientX/window.innerWidth - 0.5)*2; mouse.y = -(e.clientY/window.innerHeight - 0.5)*2; });
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  let t = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    t += 0.01;
+    throneGroup.rotation.y += 0.003;
+    throneGroup.position.y = -5 + Math.sin(t * 0.5) * 0.3;
+    pointLight.position.x = Math.sin(t) * 8;
+    pointLight.intensity = 1.5 + Math.sin(t * 2) * 0.5;
+    camera.position.x += (mouse.x * 3 - camera.position.x) * 0.05;
+    camera.position.y += (mouse.y * 2 - camera.position.y) * 0.05;
+    camera.lookAt(0, 0, 0);
+    const pos = floatPoints.geometry.attributes.position.array;
+    for (let i = 0; i < floatCount; i++) {
+      pos[i*3+1] += floatVel[i].y;
+      pos[i*3] += floatVel[i].x;
+      pos[i*3+2] += floatVel[i].z;
+      if (pos[i*3+1] > 15) { pos[i*3+1] = -15; pos[i*3] = (Math.random()-0.5)*40; }
+    }
+    floatPoints.geometry.attributes.position.needsUpdate = true;
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+// ────── HOUSES MODAL ──────
+function openHouse(key) {
+  const h = housesData[key];
+  document.getElementById('modal-content').innerHTML = `
+    <div style="font-size:48px;margin-bottom:16px">${h.emoji}</div>
+    <h3 style="color:${h.color}">${h.name}</h3>
+    <div class="motto">"${h.motto}"</div>
+    <p>${h.desc1}</p>
+    <p>${h.desc2}</p>
+    <div class="modal-stats">
+      ${h.stats.map(s=>`<div class="stat-box"><div class="stat-value" style="color:${h.color}">${s.val}</div><div class="stat-label">${s.lab}</div></div>`).join('')}
+    </div>
+    <p style="font-size:12px;letter-spacing:2px;font-family:'Cinzel',serif;color:var(--text-muted);text-transform:uppercase">
+      🏰 ${h.seat} &nbsp;|&nbsp; ⚔️ ${h.strength} &nbsp;|&nbsp; 🛡️ ${h.weakness}
+    </p>
+  `;
+  document.getElementById('house-modal').classList.add('open');
+}
+function closeHouse() { document.getElementById('house-modal').classList.remove('open'); }
+
+// ────── CHARACTERS 3D CANVAS ──────
+(function initCharCanvas() {
+  const canvas = document.getElementById('char-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const w = canvas.parentElement.clientWidth, h = 500;
+  renderer.setSize(w, h);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, w/h, 0.1, 500);
+  camera.position.set(0, 5, 25);
+
+  scene.add(new THREE.AmbientLight(0x221100, 1));
+  const light1 = new THREE.PointLight(0xffcc44, 2, 50);
+  light1.position.set(5, 10, 10);
+  scene.add(light1);
+  const light2 = new THREE.PointLight(0x4488ff, 1, 50);
+  light2.position.set(-10, 5, 5);
+  scene.add(light2);
+
+  // Create character orbs in 3D
+  const charColors = [0x6080a0,0xe04030,0xc9a84c,0xc9a84c,0x808080,0xc9a84c,0x6080a0,0x6080a0,0x6080a0,0xc9a84c,0x80c080,0xe08040];
+  const charMeshes = [];
+  const charOrbit = [];
+  characters.forEach((char, i) => {
+    const angle = (i / characters.length) * Math.PI * 2;
+    const radius = 8;
+    const geo = new THREE.IcosahedronGeometry(0.8, 1);
+    const mat = new THREE.MeshPhongMaterial({
+      color: charColors[i], shininess: 120, specular: 0xffffff,
+      emissive: charColors[i], emissiveIntensity: 0.1,
+      wireframe: false
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(Math.cos(angle)*radius, Math.sin(i)*2, Math.sin(angle)*radius);
+    mesh.userData = { char, index: i, angle, radius };
+    scene.add(mesh);
+    charMeshes.push(mesh);
+    charOrbit.push(angle);
+    // Add ring
+    const ringGeo = new THREE.TorusGeometry(1.0, 0.03, 8, 32);
+    const ringMat = new THREE.MeshPhongMaterial({ color: charColors[i], emissive: charColors[i], emissiveIntensity: 0.3 });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI/2;
+    mesh.add(ring);
+  });
+
+  // Center orb (Iron Throne symbol)
+  const centerGeo = new THREE.OctahedronGeometry(1.5, 0);
+  const centerMat = new THREE.MeshPhongMaterial({ color: 0xc9a84c, shininess: 200, specular: 0xffffff, emissive: 0x442200, emissiveIntensity: 0.5, wireframe: false });
+  const center = new THREE.Mesh(centerGeo, centerMat);
+  scene.add(center);
+  const centerRing = new THREE.Mesh(new THREE.TorusGeometry(2.5, 0.05, 8, 64), new THREE.MeshPhongMaterial({color:0xc9a84c, emissive:0xc9a84c, emissiveIntensity:0.4}));
+  centerRing.rotation.x = Math.PI/4;
+  scene.add(centerRing);
+
+  const raycaster = new THREE.Raycaster();
+  const mouse2 = new THREE.Vector2();
+  const label = document.getElementById('char-hover-label');
+
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    mouse2.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse2.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse2, camera);
+    const hits = raycaster.intersectObjects(charMeshes);
+    if (hits.length) {
+      const c = hits[0].object.userData.char;
+      label.textContent = `${c.emoji} ${c.name} — ${c.title}`;
+      canvas.style.cursor = 'pointer';
+    } else {
+      label.textContent = '— Survol pour explorer —';
+      canvas.style.cursor = 'grab';
+    }
+  });
+
+  let isDragging = false, lastMouse = {x:0};
+  let orbitAngle = 0;
+  canvas.addEventListener('mousedown', e => { isDragging = true; lastMouse.x = e.clientX; });
+  window.addEventListener('mouseup', () => isDragging = false);
+  window.addEventListener('mousemove', e => {
+    if (isDragging) orbitAngle += (e.clientX - lastMouse.x) * 0.005;
+    lastMouse.x = e.clientX;
+  });
+
+  let ct = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    ct += 0.008;
+    center.rotation.y += 0.015; center.rotation.x += 0.007;
+    centerRing.rotation.z += 0.01;
+    charMeshes.forEach((m, i) => {
+      const a = charOrbit[i] + orbitAngle + ct * 0.3;
+      m.position.x = Math.cos(a) * m.userData.radius;
+      m.position.z = Math.sin(a) * m.userData.radius;
+      m.position.y = Math.sin(ct + i) * 1.5;
+      m.rotation.y += 0.02; m.rotation.x += 0.01;
+    });
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    const nw = canvas.parentElement.clientWidth;
+    renderer.setSize(nw, 500);
+    camera.aspect = nw/500;
+    camera.updateProjectionMatrix();
+  });
+})();
+
+// ────── CHARS GRID ──────
+const charsGrid = document.getElementById('chars-grid');
+characters.forEach(c => {
+  const div = document.createElement('div');
+  div.className = 'char-card';
+  div.innerHTML = `
+    <div style="font-size:28px;margin-bottom:8px">${c.emoji}</div>
+    <div class="char-name">${c.name}</div>
+    <div class="char-title">${c.title}</div>
+    <div class="char-house" style="color:${c.alive?'#6a8a6a':'#8b3333'}">${c.house}</div>
+    <span class="char-status-badge" style="color:${c.alive?'#4a9a4a':'#c41e3a'};border-color:${c.alive?'#4a9a4a':'#c41e3a'}">${c.alive?'En vie':'Décédé(e)'}</span>
+  `;
+  charsGrid.appendChild(div);
+});
+
+// ────── MAP CANVAS ──────
+(function initMap() {
+  const canvas = document.getElementById('map-canvas');
+  const ctx = canvas.getContext('2d');
+  const container = document.getElementById('map-container');
+
+  function resize() {
+    canvas.width = container.clientWidth;
+    canvas.height = 600;
+    draw();
+  }
+
+  function draw() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Ocean background
+    const oceanGrad = ctx.createLinearGradient(0,0,W,H);
+    oceanGrad.addColorStop(0, '#050d1a');
+    oceanGrad.addColorStop(0.5, '#08152e');
+    oceanGrad.addColorStop(1, '#050d1a');
+    ctx.fillStyle = oceanGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(201,168,76,0.04)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+    // Westeros landmass (stylized)
+    ctx.save();
+    ctx.fillStyle = '#0d1f0d';
+    ctx.strokeStyle = '#1a3a1a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const wx = W*0.08, wy = H*0.05, ww = W*0.45;
+    ctx.moveTo(wx + ww*0.3, wy);
+    ctx.bezierCurveTo(wx+ww*0.7, wy, wx+ww, wy+H*0.2, wx+ww*0.9, wy+H*0.4);
+    ctx.bezierCurveTo(wx+ww*0.85, wy+H*0.6, wx+ww*0.8, wy+H*0.75, wx+ww*0.5, wy+H*0.85);
+    ctx.bezierCurveTo(wx+ww*0.35, wy+H*0.9, wx+ww*0.15, wy+H*0.85, wx+ww*0.1, wy+H*0.7);
+    ctx.bezierCurveTo(wx, wy+H*0.55, wx+ww*0.05, wy+H*0.35, wx+ww*0.2, wy+H*0.2);
+    ctx.bezierCurveTo(wx+ww*0.15, wy+H*0.1, wx+ww*0.2, wy, wx+ww*0.3, wy);
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+
+    // Essos
+    ctx.save();
+    ctx.fillStyle = '#1a1408';
+    ctx.strokeStyle = '#2a2210';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(W*0.58, H*0.25);
+    ctx.bezierCurveTo(W*0.75, H*0.15, W*0.95, H*0.2, W*0.98, H*0.45);
+    ctx.bezierCurveTo(W*0.95, H*0.7, W*0.85, H*0.8, W*0.7, H*0.75);
+    ctx.bezierCurveTo(W*0.6, H*0.7, W*0.55, H*0.55, W*0.58, H*0.25);
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+
+    // The Wall
+    const wallX = W * 0.08, wallY = H * 0.13, wallW = W * 0.28;
+    ctx.save();
+    ctx.strokeStyle = '#a8d8f0';
+    ctx.lineWidth = 4;
+    ctx.shadowColor = '#a8d8f0';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.moveTo(wallX, wallY);
+    ctx.lineTo(wallX + wallW, wallY);
+    ctx.stroke();
+    ctx.restore();
+    ctx.font = `bold 11px 'Cinzel', serif`;
+    ctx.fillStyle = '#a8d8f0';
+    ctx.fillText('LE MUR', wallX + 10, wallY - 6);
+
+    // Locations
+    const tooltip = document.getElementById('map-tooltip');
+    mapLocations.forEach(loc => {
+      const lx = W * loc.x, ly = H * loc.y;
+      ctx.save();
+      // Glow
+      ctx.shadowColor = loc.color;
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = loc.color;
+      ctx.beginPath();
+      ctx.arc(lx, ly, loc.size/2, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Pulse ring
+      ctx.strokeStyle = loc.color;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.4;
+      ctx.beginPath();
+      ctx.arc(lx, ly, loc.size, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+      // Label
+      ctx.font = `10px 'Cinzel', serif`;
+      ctx.fillStyle = '#e8d5a3';
+      ctx.fillText(loc.name, lx + loc.size/2 + 4, ly + 4);
+    });
+
+    // Title
+    ctx.font = `bold 14px 'Cinzel Decorative', serif`;
+    ctx.fillStyle = 'rgba(201,168,76,0.5)';
+    ctx.fillText('WESTEROS', W*0.15, H*0.96);
+    ctx.fillText('ESSOS', W*0.72, H*0.96);
+  }
+
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (canvas.width/rect.width);
+    const my = (e.clientY - rect.top) * (canvas.height/rect.height);
+    const tooltip = document.getElementById('map-tooltip');
+    let found = false;
+    mapLocations.forEach(loc => {
+      const lx = canvas.width*loc.x, ly = canvas.height*loc.y;
+      const dist = Math.hypot(mx-lx, my-ly);
+      if (dist < 20) {
+        document.getElementById('tt-name').textContent = loc.name;
+        document.getElementById('tt-desc').textContent = loc.desc;
+        tooltip.style.left = (e.clientX - rect.left + container.scrollLeft) + 'px';
+        tooltip.style.top = (e.clientY - rect.top + 20) + 'px';
+        tooltip.style.display = 'block';
+        found = true;
+      }
+    });
+    if (!found) tooltip.style.display = 'none';
+  });
+
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Animate pulsing
+  let pt = 0;
+  function animateMap() {
+    requestAnimationFrame(animateMap);
+    pt += 0.05;
+    // redraw needed for animation, but to save perf only animate occasionally
+  }
+  setInterval(() => { draw(); }, 2000);
+})();
+
+// ────── TIMELINE ──────
+const tlContainer = document.getElementById('timeline-container');
+timelineEvents.forEach((ev, i) => {
+  const item = document.createElement('div');
+  item.className = 'timeline-item';
+  item.innerHTML = `
+    <div class="timeline-content">
+      <div class="timeline-year">${ev.year}</div>
+      <div class="timeline-title">${ev.title}</div>
+      <div class="timeline-desc">${ev.desc}</div>
+    </div>
+    <div class="timeline-dot"></div>
+    <div class="timeline-content" style="visibility:hidden"></div>
+  `;
+  tlContainer.appendChild(item);
+});
+
+// Intersection Observer for timeline
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.3 });
+document.querySelectorAll('.timeline-item').forEach(el => observer.observe(el));
+
+// ────── DRAGONS 3D ──────
+(function initDragons() {
+  const canvas = document.getElementById('dragon-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const w = canvas.parentElement.clientWidth || 1200, h = 500;
+  renderer.setSize(w, h);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, w/h, 0.1, 500);
+  camera.position.set(0, 5, 30);
+
+  scene.add(new THREE.AmbientLight(0x100800, 1));
+  const mainLight = new THREE.PointLight(0xff6600, 3, 80);
+  mainLight.position.set(0, 15, 10);
+  scene.add(mainLight);
+
+  const dragonColors = [
+    { body: 0x1a0800, scale: 0xe04030, emit: 0x8b0000 },
+    { body: 0x081508, scale: 0x4a8a4a, emit: 0x1a4a1a },
+    { body: 0x1a1808, scale: 0xe0c040, emit: 0x8b7a14 }
+  ];
+
+  const dragons = [];
+  window._focusDragonIdx = -1;
+
+  dragonColors.forEach((colors, i) => {
+    const group = new THREE.Group();
+    group.position.x = (i - 1) * 10;
+
+    // Body (capsule = cylinder + 2 hemispheres, compatible r128)
+    const bodyMat = new THREE.MeshPhongMaterial({ color: colors.body, shininess: 60, specular: 0x333333, emissive: colors.emit, emissiveIntensity: 0.3 });
+    const cylGeo = new THREE.CylinderGeometry(1.0, 1.0, 3, 16);
+    const body = new THREE.Mesh(cylGeo, bodyMat);
+    body.rotation.z = Math.PI/2;
+    group.add(body);
+    const sphFront = new THREE.Mesh(new THREE.SphereGeometry(1.0, 16, 12), bodyMat);
+    sphFront.position.set(1.5, 0, 0);
+    group.add(sphFront);
+    const sphBack = new THREE.Mesh(new THREE.SphereGeometry(1.0, 16, 12), bodyMat);
+    sphBack.position.set(-1.5, 0, 0);
+    group.add(sphBack);
+
+    // Head
+    const headGeo = new THREE.ConeGeometry(0.8, 1.8, 6);
+    const headMat = new THREE.MeshPhongMaterial({ color: colors.scale, shininess: 100, emissive: colors.emit, emissiveIntensity: 0.4 });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.set(2.5, 0.5, 0);
+    head.rotation.z = Math.PI/2;
+    group.add(head);
+
+    // Tail
+    const tailGeo = new THREE.ConeGeometry(0.5, 3, 6);
+    const tailMat = new THREE.MeshPhongMaterial({ color: colors.body, shininess: 40 });
+    const tail = new THREE.Mesh(tailGeo, tailMat);
+    tail.position.set(-3.5, 0, 0);
+    tail.rotation.z = -Math.PI/4;
+    group.add(tail);
+
+    // Wings
+    [-1, 1].forEach(side => {
+      const wingGeo = new THREE.ConeGeometry(0.2, 5, 4);
+      const wingMat = new THREE.MeshPhongMaterial({ color: colors.scale, transparent: true, opacity: 0.7, side: THREE.DoubleSide, shininess: 80 });
+      const wing = new THREE.Mesh(wingGeo, wingMat);
+      wing.position.set(0, side * 2, 0.5);
+      wing.rotation.x = side * Math.PI/6;
+      wing.rotation.z = side * 0.3;
+      group.add(wing);
+    });
+
+    // Fire glow (point light)
+    const fireLight = new THREE.PointLight(colors.scale, 1.5, 12);
+    fireLight.position.set(3.5, 0.5, 0);
+    group.add(fireLight);
+
+    // Scale decorations
+    for (let s = 0; s < 8; s++) {
+      const scGeo = new THREE.OctahedronGeometry(0.12, 0);
+      const scMat = new THREE.MeshPhongMaterial({ color: colors.scale, shininess: 200, emissive: colors.emit, emissiveIntensity: 0.5 });
+      const sc = new THREE.Mesh(scGeo, scMat);
+      const a = (s/8)*Math.PI*2;
+      sc.position.set(Math.cos(a)*1.2, Math.sin(a)*0.8, 0);
+      group.add(sc);
+    }
+
+    scene.add(group);
+    dragons.push({ group, fireLight, phase: (i/3)*Math.PI*2 });
+  });
+
+  // Stars
+  const starGeo = new THREE.BufferGeometry();
+  const sp = new Float32Array(1500 * 3);
+  for (let i = 0; i < 1500*3; i++) sp[i] = (Math.random()-0.5)*300;
+  starGeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+  scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color:0x8888aa, size:0.15})));
+
+  window.focusDragon = function(idx) {
+    window._focusDragonIdx = idx;
+  };
+
+  let dt = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    dt += 0.01;
+    dragons.forEach((d, i) => {
+      const target = window._focusDragonIdx === i ? 0 : (i-1)*10;
+      d.group.position.x += (target - d.group.position.x) * 0.05;
+      d.group.position.y = Math.sin(dt + d.phase) * 2;
+      d.group.rotation.y = Math.sin(dt * 0.7 + d.phase) * 0.3;
+      d.group.rotation.z = Math.sin(dt * 0.5 + d.phase) * 0.08;
+      d.fireLight.intensity = 1.5 + Math.sin(dt*4 + d.phase) * 0.8;
+    });
+    mainLight.position.x = Math.sin(dt*0.5)*10;
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    const nw = canvas.parentElement.clientWidth || 1200;
+    renderer.setSize(nw, 500);
+    camera.aspect = nw/500;
+    camera.updateProjectionMatrix();
+  });
+})();
+
+// ────── DEATH COUNTERS ──────
+function animateCounter(el, target, duration) {
+  let start = null;
+  function step(ts) {
+    if (!start) start = ts;
+    const progress = Math.min((ts - start) / duration, 1);
+    const val = Math.floor(progress * target);
+    el.textContent = val >= 1000 ? val.toLocaleString() : val;
+    if (progress < 1) requestAnimationFrame(step);
+    else el.textContent = target >= 1000 ? target.toLocaleString() : target;
+  }
+  requestAnimationFrame(step);
+}
+
+const deathObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting && !e.target._counted) {
+      e.target._counted = true;
+      const target = parseInt(e.target.dataset.target);
+      animateCounter(e.target, target, 2000);
+      deathObserver.unobserve(e.target);
+    }
+  });
+}, {threshold: 0.1});
+document.querySelectorAll('.death-num').forEach(el => deathObserver.observe(el));
+
+// ────── QUIZ ──────
+let qIdx = 0, qScore = 0, answered = false;
+const shuffled = [...quizQuestions].sort(() => Math.random() - 0.5);
+
+function renderQuestion() {
+  if (qIdx >= shuffled.length) { showScore(); return; }
+  answered = false;
+  const q = shuffled[qIdx];
+  document.getElementById('quiz-progress-bar').style.width = (qIdx/shuffled.length*100) + '%';
+  document.getElementById('quiz-question').textContent = `${qIdx+1}/${shuffled.length} — ${q.q}`;
+  document.getElementById('quiz-next').style.display = 'none';
+  const opts = document.getElementById('quiz-options');
+  opts.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => {
+      if (answered) return;
+      answered = true;
+      if (i === q.correct) { btn.classList.add('correct'); qScore++; }
+      else { btn.classList.add('wrong'); opts.children[q.correct].classList.add('correct'); }
+      Array.from(opts.children).forEach(b => b.disabled = true);
+      document.getElementById('quiz-next').style.display = 'block';
+    });
+    opts.appendChild(btn);
+  });
+}
+
+function nextQuestion() { qIdx++; renderQuestion(); }
+
+function showScore() {
+  document.getElementById('quiz-body').style.display = 'none';
+  const sc = document.getElementById('quiz-score');
+  sc.style.display = 'block';
+  document.getElementById('score-display').textContent = `${qScore}/${shuffled.length}`;
+  const pct = qScore / shuffled.length;
+  let title, desc;
+  if (pct >= 0.9) { title = "Vous êtes digne du Trône de Fer !"; desc = "Votre connaissance de Westeros est encyclopédique. Le Trône vous appartient de droit."; }
+  else if (pct >= 0.7) { title = "Un Seigneur respectable !"; desc = "Vous méritez votre place à la Cour. Continuez à étudier les livres du Mestre."; }
+  else if (pct >= 0.5) { title = "Un aventurier prometteur."; desc = "Votre chemin vers le Trône est encore long, mais vous avez le mérite de la persévérance."; }
+  else { title = "Valar Morghulis."; desc = "Tous les hommes doivent mourir... et recommencer. Retentez votre chance !"; }
+  document.getElementById('score-title').textContent = title;
+  document.getElementById('score-desc').textContent = desc;
+}
+
+function restartQuiz() {
+  qIdx = 0; qScore = 0; answered = false;
+  shuffled.sort(() => Math.random() - 0.5);
+  document.getElementById('quiz-body').style.display = 'block';
+  document.getElementById('quiz-score').style.display = 'none';
+  renderQuestion();
+}
+
+renderQuestion();
+// Fallback: trigger death counters already in view
+setTimeout(() => {
+  document.querySelectorAll('.death-num').forEach(el => {
+    const r = el.getBoundingClientRect();
+    if (r.top < window.innerHeight && !el._counted) {
+      el._counted = true;
+      animateCounter(el, parseInt(el.dataset.target), 2000);
+    }
+  });
+}, 800);
+</script>
+</body>
+</html>

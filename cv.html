@@ -1,0 +1,943 @@
+
+cv_content = '''<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CV - Lammar Hichem | Développeur Web</title>
+  <meta name="description" content="CV en ligne de Lammar Hichem, Développeur Web Junior spécialisé en HTML, CSS, JavaScript, Python, Java et C++.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #e0e7ff;
+      --accent: #f59e0b;
+      --dark: #0f172a;
+      --dark-light: #1e293b;
+      --text: #334155;
+      --text-light: #64748b;
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --border: #e2e8f0;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+      --radius: 16px;
+      --radius-sm: 8px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(1); opacity: 0.5; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ===== HEADER / HERO ===== */
+    .hero {
+      background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 50%, #312e81 100%);
+      background-size: 200% 200%;
+      animation: gradientShift 8s ease infinite;
+      color: white;
+      padding: 80px 20px 100px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+      animation: slideDown 1s ease-out;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 24px;
+      border: 1px solid rgba(255,255,255,0.15);
+      animation: fadeIn 1s ease-out 0.3s both;
+    }
+
+    .hero-badge .dot {
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -1px;
+    }
+
+    .hero .title {
+      font-size: 1.3rem;
+      color: rgba(255,255,255,0.7);
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+
+    .hero .location {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.95rem;
+    }
+
+    /* ===== PROFILE SECTION ===== */
+    .profile-section {
+      margin-top: -60px;
+      position: relative;
+      z-index: 10;
+      padding: 0 20px;
+    }
+
+    .profile-card {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-xl);
+      padding: 40px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 40px;
+      align-items: center;
+      animation: scaleIn 0.8s ease-out 0.2s both;
+    }
+
+    .profile-image-wrapper {
+      position: relative;
+    }
+
+    .profile-image {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 5px solid white;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      z-index: 1;
+    }
+
+    .profile-image-wrapper::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 3px solid var(--primary);
+      opacity: 0.3;
+      animation: pulse-ring 2s infinite;
+    }
+
+    .profile-info h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.8rem;
+      color: var(--dark);
+      margin-bottom: 8px;
+    }
+
+    .profile-info .role {
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin-bottom: 16px;
+    }
+
+    .profile-info .bio {
+      color: var(--text-light);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    .profile-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: var(--transition);
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(99,102,241,0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99,102,241,0.4);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary-light);
+    }
+
+    .btn-outline:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+    }
+
+    /* ===== CONTAINER & SECTIONS ===== */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .main-content {
+      padding: 60px 0;
+    }
+
+    .section {
+      margin-bottom: 50px;
+      animation: fadeInUp 0.8s ease-out both;
+    }
+
+    .section:nth-child(1) { animation-delay: 0.1s; }
+    .section:nth-child(2) { animation-delay: 0.2s; }
+    .section:nth-child(3) { animation-delay: 0.3s; }
+    .section:nth-child(4) { animation-delay: 0.4s; }
+    .section:nth-child(5) { animation-delay: 0.5s; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .section-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      color: white;
+    }
+
+    .section-header h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.4rem;
+      color: var(--dark);
+    }
+
+    /* ===== SKILLS ===== */
+    .skills-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .skill-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border-radius: 50px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: var(--transition);
+      cursor: default;
+    }
+
+    .skill-tag:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .skill-tag.html { background: #fef2f2; color: #dc2626; }
+    .skill-tag.css { background: #eff6ff; color: #2563eb; }
+    .skill-tag.js { background: #fefce8; color: #ca8a04; }
+    .skill-tag.python { background: #f0fdf4; color: #16a34a; }
+    .skill-tag.java { background: #fff7ed; color: #ea580c; }
+    .skill-tag.cpp { background: #f5f3ff; color: #7c3aed; }
+    .skill-tag.mysql { background: #f0f9ff; color: #0284c7; }
+    .skill-tag.git { background: #faf5ff; color: #9333ea; }
+
+    /* ===== EXPERIENCE ===== */
+    .timeline {
+      position: relative;
+      padding-left: 30px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--primary), var(--primary-light));
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 30px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -26px;
+      top: 4px;
+      width: 18px;
+      height: 18px;
+      background: var(--primary);
+      border-radius: 50%;
+      border: 3px solid var(--bg);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .timeline-content {
+      background: var(--bg-card);
+      padding: 24px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      transition: var(--transition);
+    }
+
+    .timeline-content:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-light);
+    }
+
+    .timeline-date {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--primary);
+      font-weight: 600;
+      background: var(--primary-light);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+
+    .timeline-content h3 {
+      font-size: 1.1rem;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+
+    .timeline-content .company {
+      color: var(--text-light);
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .timeline-content ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .timeline-content ul li {
+      position: relative;
+      padding-left: 20px;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    .timeline-content ul li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    /* ===== EDUCATION ===== */
+    .education-card {
+      background: var(--bg-card);
+      padding: 28px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      transition: var(--transition);
+    }
+
+    .education-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-light);
+    }
+
+    .edu-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary-light) 0%, #c7d2fe 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      color: var(--primary-dark);
+      flex-shrink: 0;
+    }
+
+    .edu-info h3 {
+      font-size: 1.1rem;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+
+    .edu-info .school {
+      color: var(--text-light);
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+
+    .edu-info .year {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--primary);
+      font-weight: 600;
+      background: var(--primary-light);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    /* ===== CONTACT ===== */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      color: var(--text);
+      transition: var(--transition);
+    }
+
+    .contact-item:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-light);
+      transform: translateY(-2px);
+    }
+
+    .contact-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .contact-item.email .contact-icon { background: #fef2f2; color: #dc2626; }
+    .contact-item.phone .contact-icon { background: #f0fdf4; color: #16a34a; }
+    .contact-item.linkedin .contact-icon { background: #eff6ff; color: #2563eb; }
+    .contact-item.github .contact-icon { background: #f5f3ff; color: #7c3aed; }
+
+    .contact-info-text .label {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .contact-info-text .value {
+      font-weight: 600;
+      color: var(--dark);
+      font-size: 0.95rem;
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: var(--dark);
+      color: white;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .footer-content {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .footer-quote {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.2rem;
+      font-style: italic;
+      opacity: 0.8;
+      margin-bottom: 20px;
+    }
+
+    .footer-social {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .footer-social a {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.1rem;
+      text-decoration: none;
+      transition: var(--transition);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .footer-social a:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      transform: translateY(-3px);
+    }
+
+    .footer-copy {
+      opacity: 0.5;
+      font-size: 0.9rem;
+    }
+
+    /* ===== PRINT STYLES ===== */
+    @media print {
+      .hero { padding: 40px 20px; }
+      .profile-section { margin-top: -30px; }
+      .profile-card { box-shadow: none; border: 1px solid var(--border); }
+      .btn { display: none; }
+      .timeline-content, .education-card, .contact-item {
+        box-shadow: none;
+        border: 1px solid var(--border);
+      }
+      body { background: white; }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .hero { padding: 60px 20px 80px; }
+      .hero h1 { font-size: 2.2rem; }
+      .hero .title { font-size: 1.1rem; }
+
+      .profile-card {
+        grid-template-columns: 1fr;
+        text-align: center;
+        padding: 30px 24px;
+      }
+
+      .profile-image {
+        width: 140px;
+        height: 140px;
+        margin: 0 auto;
+      }
+
+      .profile-actions {
+        justify-content: center;
+      }
+
+      .section-header h2 { font-size: 1.2rem; }
+
+      .contact-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .education-card {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .edu-icon {
+        margin: 0 auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 { font-size: 1.8rem; }
+      .profile-card { padding: 24px 16px; }
+      .timeline { padding-left: 20px; }
+      .timeline-dot { left: -18px; width: 14px; height: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO HEADER -->
+  <header class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        Disponible pour de nouvelles opportunités
+      </div>
+      <h1>Lammar Hichem</h1>
+      <p class="title">Développeur Web Junior</p>
+      <p class="location">
+        <i class="fas fa-map-marker-alt"></i>
+        Algérie
+      </p>
+    </div>
+  </header>
+
+  <!-- PROFILE CARD -->
+  <section class="profile-section">
+    <div class="profile-card">
+      <div class="profile-image-wrapper">
+        <img src="photodeprofile.jpeg" alt="Photo de Lammar Hichem" class="profile-image">
+      </div>
+      <div class="profile-info">
+        <h2>Lammar Hichem</h2>
+        <p class="role">Développeur Web Junior</p>
+        <p class="bio">
+          Passionné par le développement web, les nouvelles technologies et la création de solutions 
+          élégantes et efficaces. Curieux, autonome et rigoureux, je suis toujours à la recherche de 
+          nouveaux défis pour perfectionner mes compétences et contribuer à des projets innovants.
+        </p>
+        <div class="profile-actions">
+          <a href="cv-lammar-hichem.pdf" class="btn btn-primary" download>
+            <i class="fas fa-download"></i> Télécharger mon CV
+          </a>
+          <a href="mailto:hichem22221111@gmail.com" class="btn btn-outline">
+            <i class="fas fa-envelope"></i> M'envoyer un email
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="container">
+
+      <!-- SKILLS -->
+      <section class="section">
+        <div class="section-header">
+          <div class="section-icon" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+            <i class="fas fa-code"></i>
+          </div>
+          <h2>Compétences Techniques</h2>
+        </div>
+        <div class="skills-grid">
+          <span class="skill-tag html"><i class="fab fa-html5"></i> HTML5</span>
+          <span class="skill-tag css"><i class="fab fa-css3-alt"></i> CSS3</span>
+          <span class="skill-tag js"><i class="fab fa-js"></i> JavaScript</span>
+          <span class="skill-tag python"><i class="fab fa-python"></i> Python</span>
+          <span class="skill-tag java"><i class="fab fa-java"></i> Java</span>
+          <span class="skill-tag cpp"><i class="fas fa-microchip"></i> C++</span>
+          <span class="skill-tag mysql"><i class="fas fa-database"></i> MySQL</span>
+          <span class="skill-tag git"><i class="fab fa-git-alt"></i> Git & GitHub</span>
+        </div>
+      </section>
+
+      <!-- EXPERIENCE -->
+      <section class="section">
+        <div class="section-header">
+          <div class="section-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+            <i class="fas fa-briefcase"></i>
+          </div>
+          <h2>Expériences Professionnelles</h2>
+        </div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <span class="timeline-date"><i class="far fa-calendar"></i> 2024</span>
+              <h3>Stage Développeur Web</h3>
+              <p class="company">DevTech Solutions</p>
+              <ul>
+                <li>Conception et développement d'un site e-commerce responsive from scratch</li>
+                <li>Intégration de Bootstrap pour un design mobile-first optimisé</li>
+                <li>Développement de fonctionnalités interactives en JavaScript vanilla</li>
+                <li>Collaboration avec l'équipe backend sur l'intégration API en PHP</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EDUCATION -->
+      <section class="section">
+        <div class="section-header">
+          <div class="section-icon" style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);">
+            <i class="fas fa-graduation-cap"></i>
+          </div>
+          <h2>Formation</h2>
+        </div>
+        <div class="education-card">
+          <div class="edu-icon">
+            <i class="fas fa-university"></i>
+          </div>
+          <div class="edu-info">
+            <h3>Licence en Informatique (L3)</h3>
+            <p class="school">Université de Technologie</p>
+            <span class="year"><i class="far fa-calendar"></i> 2022 — 2025</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROJECTS -->
+      <section class="section">
+        <div class="section-header">
+          <div class="section-icon" style="background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);">
+            <i class="fas fa-rocket"></i>
+          </div>
+          <h2>Projets Réalisés</h2>
+        </div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <span class="timeline-date"><i class="far fa-folder"></i> Projet Personnel</span>
+              <h3>Game of Thrones Fan Site</h3>
+              <p class="company">Site web immersif dédié à l'univers de Game of Thrones</p>
+              <ul>
+                <li>Présentation interactive des grandes maisons de Westeros</li>
+                <li>Fiches détaillées des personnages emblématiques</li>
+                <li>Carte interactive des lieux et des dragons</li>
+                <li>Design sombre et épique inspiré de l'esthétique de la série</li>
+              </ul>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <span class="timeline-date"><i class="far fa-folder"></i> Collection</span>
+              <h3>Landing Pages Responsives</h3>
+              <p class="company">Café, Cosmétique, Supérette, Gym</p>
+              <ul>
+                <li>4 landing pages complètes avec designs uniques et personnalisés</li>
+                <li>Formulaires de contact, galeries d'images et menus interactifs</li>
+                <li>Optimisation mobile et animations CSS modernes</li>
+              </ul>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <span class="timeline-date"><i class="far fa-folder"></i> Projet Académique</span>
+              <h3>CERISTBiblio — Plateforme de Recherche Scientifique</h3>
+              <p class="company">Mémoire de fin d'études L3 Informatique</p>
+              <ul>
+                <li>Développement d'une plateforme pour le recueil et l'analyse des indicateurs de la recherche scientifique nationale</li>
+                <li>Architecture complète : frontend, backend et base de données</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTACT -->
+      <section class="section">
+        <div class="section-header">
+          <div class="section-icon" style="background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);">
+            <i class="fas fa-address-card"></i>
+          </div>
+          <h2>Contact</h2>
+        </div>
+        <div class="contact-grid">
+          <a href="mailto:hichem22221111@gmail.com" class="contact-item email">
+            <div class="contact-icon">
+              <i class="fas fa-envelope"></i>
+            </div>
+            <div class="contact-info-text">
+              <div class="label">Email</div>
+              <div class="value">hichem22221111@gmail.com</div>
+            </div>
+          </a>
+          <a href="tel:+213675316258" class="contact-item phone">
+            <div class="contact-icon">
+              <i class="fas fa-phone"></i>
+            </div>
+            <div class="contact-info-text">
+              <div class="label">Téléphone</div>
+              <div class="value">+213 6 75 31 62 58</div>
+            </div>
+          </a>
+          <a href="https://www.linkedin.com/in/hichem-lammar-77086927a/" target="_blank" class="contact-item linkedin">
+            <div class="contact-icon">
+              <i class="fab fa-linkedin-in"></i>
+            </div>
+            <div class="contact-info-text">
+              <div class="label">LinkedIn</div>
+              <div class="value">hichem-lammar</div>
+            </div>
+          </a>
+          <a href="https://github.com" target="_blank" class="contact-item github">
+            <div class="contact-icon">
+              <i class="fab fa-github"></i>
+            </div>
+            <div class="contact-info-text">
+              <div class="label">GitHub</div>
+              <div class="value">@lammarhichem</div>
+            </div>
+          </a>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-content">
+      <p class="footer-quote">"Le code est comme l'humour. Quand on doit l'expliquer, c'est mauvais."</p>
+      <div class="footer-social">
+        <a href="mailto:hichem22221111@gmail.com" aria-label="Email"><i class="fas fa-envelope"></i></a>
+        <a href="https://www.linkedin.com/in/hichem-lammar-77086927a/" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+        <a href="https://github.com" target="_blank" aria-label="GitHub"><i class="fab fa-github"></i></a>
+      </div>
+      <p class="footer-copy">© 2025 Lammar Hichem — Conçu avec passion et beaucoup de café ☕</p>
+    </div>
+  </footer>
+
+</body>
+</html>'''
+
+
